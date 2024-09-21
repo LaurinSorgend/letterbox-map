@@ -1,5 +1,5 @@
 # letterboxd-map plot
-![Example Plot](https://github.com/LaurinSorgend/letterbox-map/blob/main/plot.svg)
+![Example Plot](https://github.com/LaurinSorgend/letterbox-map/blob/main/plot.png)
 ## Guide
 ## Prequisites
 - [Python 3.X](https://www.python.org/downloads/)(I use 3.12).
