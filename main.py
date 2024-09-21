@@ -1,7 +1,7 @@
 import csv
 import json
 from tmdbv3api import TMDb, Movie
-
+import os
 
 tmdb = TMDb()
 tmdb.api_key = "YOUR_TMDB_API_KEY"
@@ -25,22 +25,33 @@ def get_origin_country(movie_name, movie_year):
     return []
 
 
-movies = []
+if os.path.exists("movies.json"):
+    with open("movies.json", "r", encoding="utf-8") as json_file:
+        existing_movies = json.load(json_file)
+else:
+    existing_movies = []
+existing_movie_set = {(movie["name"], movie["year"]) for movie in existing_movies}
+
+movies = list()
+
 with open("ratings.csv", mode="r", encoding="utf-8") as csv_file:
     csv_reader = csv.DictReader(csv_file)
     for row in csv_reader:
-        movie = {
-            "date": row["Date"],
-            "name": row["Name"],
-            "year": int(row["Year"]),
-            "letterboxd_uri": row["Letterboxd URI"],
-            "rating": float(row["Rating"]),
-        }
-        movie["origin_country"] = get_origin_country(movie["name"], movie["year"])
-        movies.append(movie)
+        movie_name = row["Name"]
+        movie_year = int(row["Year"])
+        if (movie_name, movie_year) not in existing_movie_set:
+            movie = {
+                "date": row["Date"],
+                "name": movie_name,
+                "year": movie_year,
+                "letterboxd_uri": row["Letterboxd URI"],
+                "rating": float(row["Rating"]),
+                "origin_country": get_origin_country(movie_name, movie_year),
+            }
+            movies.append(movie)
+existing_movies.extend(movies)
 
+with open("movies.json", "w", encoding="utf-8") as json_file:
+    json.dump(existing_movies, json_file, ensure_ascii=False, indent=4)
 
-with open("movies_with_countries.json", "w", encoding="utf-8") as json_file:
-    json.dump(movies, json_file, ensure_ascii=False, indent=4)
-
-print("Movies with origin countries have been saved to 'movies_with_countries.json'.")
+print("Movies with origin countries have been saved to 'movies.json'.")
