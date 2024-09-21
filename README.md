@@ -1,12 +1,11 @@
 # letterboxd-map plot
-![Example Plot](https://github.com/LaurinSorgend/letterbox-map/blob/main/plot.svg)
+![Example Plot](https://github.com/LaurinSorgend/letterbox-map/blob/main/plot.png)
 ## Guide
 ## Prequisites
 - [Python 3.X](https://www.python.org/downloads/)(I use 3.12).
-- [geopandas](https://geopandas.org/en/stable/getting_started/install.html)
-- [matplotlib](https://matplotlib.org/stable/install/index.html)
 - [pandas](https://pandas.pydata.org/docs/getting_started/install.html)
 - tmdbv3api `pip install tmdbv3api`
+- plotly `pip install plotly==5.24.1 ` or `conda install -c plotly plotly=5.24.1 `
 - You will have to create a TMDB Account and register for a [API Key](https://www.themoviedb.org/settings/api) (Because letterboxd doesn't have an open API so I need to get the origin country data from TMDB).
 
 ### Usage

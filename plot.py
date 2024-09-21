@@ -1,8 +1,7 @@
 import json
-import geopandas as gpd
-import matplotlib.pyplot as plt
 import pandas as pd
-import matplotlib.colors as mcolors
+import plotly.graph_objects as go
+import plotly.express as px
 
 with open("movies.json", "r", encoding="utf-8") as json_file:
     movies = json.load(json_file)
@@ -10,65 +9,125 @@ with open("movies.json", "r", encoding="utf-8") as json_file:
 data = []
 for movie in movies:
     for country in movie["origin_country"]:
-        data.append({"country": country, "rating": movie["rating"]})
+        data.append(
+            {
+                "country": country,
+                "rating": movie["rating"],
+                "name": movie["name"],
+                "year": movie["year"],
+                "letterboxd_uri": movie["letterboxd_uri"],
+            }
+        )
 
 df = pd.DataFrame(data)
 
 avg_rating = df.groupby("country")["rating"].mean().reset_index()
 movie_count = df.groupby("country")["rating"].size().reset_index(name="count")
-
-world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-world_avg_rating = world.merge(
-    avg_rating, how="left", left_on="name", right_on="country"
-)
-world_movie_count = world.merge(
-    movie_count, how="left", left_on="name", right_on="country"
+movies_by_country = (
+    df.groupby("country")
+    .apply(lambda x: x.to_dict(orient="records"))
+    .reset_index(name="movies")
 )
 
-
-# world = gpd.read_file(r"path_to\ne_10m_admin_0_countries.shp")
-# world_avg_rating = world.merge(
-#     avg_rating, how="left", left_on="NAME_EN", right_on="country"
-# )
-# world_movie_count = world.merge(
-#     movie_count, how="left", left_on="NAME_EN", right_on="country"
-# )
-
-
-cmap = plt.cm.viridis
-
-# Plot the average rating per country
-fig, ax = plt.subplots(1, 2, figsize=(20, 10))
-
-world_avg_rating.plot(
-    column="rating",
-    ax=ax[0],
-    cmap=cmap,
-    legend=True,
-    vmin=0.5,
-    vmax=5,
-    legend_kwds={"label": "Average Rating by Country", "orientation": "horizontal"},
-    edgecolor="black",
-    linewidth=0.4,
-    missing_kwds={"color": "lightgrey", "label": "No Data"},
+movies_by_country["hover_text"] = movies_by_country["movies"].apply(
+    lambda x: "<br>".join(
+        [f"{m['name']} ({m['year']}) - Rating: {m['rating']}" for m in x[:10]]
+    )
+    + ("<br>...and more" if len(x) > 10 else "")
+    if isinstance(x, list)
+    else "No Data"
 )
-ax[0].set_title("Average Rating by Country", fontsize=15)
-ax[0].set_axis_off()
 
-world_movie_count.plot(
-    column="count",
-    ax=ax[1],
-    cmap=cmap,
-    legend=True,
-    legend_kwds={"label": "Movie Count by Country", "orientation": "horizontal"},
-    edgecolor="black",
-    linewidth=0.4,
-    missing_kwds={"color": "lightgrey", "label": "No Data"},
+movies_by_country["links"] = movies_by_country["movies"].apply(
+    lambda x: "<br>".join(
+        [
+            f"<a href='{m['letterboxd_uri']}' target='_blank'>{m['name']} ({m['year']})</a>"
+            for m in x
+        ]
+    )
+    if isinstance(x, list)
+    else "No Data"
 )
-ax[1].set_title("Movie Count by Country", fontsize=15)
-ax[1].set_axis_off()
 
-fig.savefig("plot.svg", format="svg")
+world_movies = pd.merge(
+    movie_count,
+    movies_by_country[["country", "hover_text", "links"]],
+    on="country",
+    how="left",
+)
+world_movies = pd.merge(world_movies, avg_rating, on="country", how="left")
 
-plt.tight_layout()
-plt.show()
+fig = go.Figure()
+
+fig.add_trace(
+    go.Choropleth(
+        locations=world_movies["country"],
+        locationmode="country names",
+        z=world_movies["count"],
+        colorscale="Viridis",
+        colorbar_title="Movie Count",
+        text=world_movies["hover_text"],
+        hoverinfo="location+text",
+        visible=True,
+    )
+)
+
+fig.add_trace(
+    go.Choropleth(
+        locations=world_movies["country"],
+        locationmode="country names",
+        z=world_movies["rating"],
+        colorscale="Viridis",
+        colorbar_title="Average Rating",
+        text=world_movies["hover_text"],
+        hoverinfo="location+text",
+        visible=False,
+    )
+)
+
+fig.update_geos(
+    showcountries=True,
+    countrycolor="Black",
+    showcoastlines=True,
+    coastlinecolor="Black",
+    showland=True,
+    landcolor="lightgrey",
+)
+
+fig.update_layout(
+    margin={"r": 0, "t": 50, "l": 0, "b": 0},
+    updatemenus=[
+        dict(
+            buttons=list(
+                [
+                    dict(
+                        args=[{"visible": [True, False]}],
+                        label="Movie Count",
+                        method="update",
+                    ),
+                    dict(
+                        args=[{"visible": [False, True]}],
+                        label="Average Rating",
+                        method="update",
+                    ),
+                ]
+            ),
+            direction="down",
+            showactive=True,
+            x=0.17,
+            xanchor="left",
+            y=1.15,
+            yanchor="top",
+        ),
+    ],
+)
+
+fig.write_html("interactive_map.html")
+
+fig.show()
+
+with open("movie_links.html", "w", encoding="utf-8") as f:
+    for index, row in world_movies.iterrows():
+        f.write(f"<h2>{row['country']}</h2>")
+        f.write(row["links"])
+        f.write("<br><br>")
