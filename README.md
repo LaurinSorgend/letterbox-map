@@ -16,3 +16,5 @@
 5. Copy the `ratings.csv` to Folder of the cloned repositry.
 6. First run `main.py`.
 7. Then run `plot.py`.
+## Not Interactive Map
+If you want a normal plot that isn't interactive use this [coomit](https://github.com/LaurinSorgend/letterboxd-map/tree/7d05a0e67d395d26e5cadad6096426267af7ab14).
