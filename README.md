@@ -11,7 +11,7 @@
 ### Usage
 1. Clone the repository.
 2. Replace `'YOUR_TMDB_API_KEY'` in `main.py` with your tmdb api key.
-3. Export your data from [letterbox](https://letterboxd.com/settings/data/).
+3. Export your data from [letterboxd](https://letterboxd.com/settings/data/).
 4. Use 7-Zip to unpack the Zip.
 5. Copy the `ratings.csv` to Folder of the cloned repositry.
 6. First run `main.py`.
