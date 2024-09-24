@@ -4,8 +4,7 @@ from tmdbv3api import TMDb, Movie
 import os
 
 tmdb = TMDb()
-tmdb.api_key = "YOUR_TMDB_API_KEY"
-
+tmdb.api_key = "YOUR_API_KEY"
 
 movie_api = Movie()
 
@@ -13,9 +12,18 @@ movie_api = Movie()
 def get_origin_country(movie_name, movie_year):
     search_results = movie_api.search(movie_name)
     for result in search_results:
-        if "release_date" in result and result["release_date"].startswith(
-            str(movie_year)
-        ):
+        if movie_year != 0:
+            if "release_date" in result and result["release_date"].startswith(
+                str(movie_year)
+            ):
+                movie_details = movie_api.details(result["id"])
+                if "production_countries" in movie_details:
+                    countries = [
+                        country["name"]
+                        for country in movie_details["production_countries"]
+                    ]
+                    return countries
+        else:
             movie_details = movie_api.details(result["id"])
             if "production_countries" in movie_details:
                 countries = [
@@ -38,7 +46,10 @@ with open("ratings.csv", mode="r", encoding="utf-8") as csv_file:
     csv_reader = csv.DictReader(csv_file)
     for row in csv_reader:
         movie_name = row["Name"]
-        movie_year = int(row["Year"])
+        if row["Year"]:
+            movie_year = int(row["Year"])
+        else:
+            movie_year = 0
         if (movie_name, movie_year) not in existing_movie_set:
             movie = {
                 "date": row["Date"],
